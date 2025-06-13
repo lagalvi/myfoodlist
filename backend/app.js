@@ -12,7 +12,11 @@ import {
 } from "./Utils.js";
 import cookieParser from "cookie-parser";
 
-const PORT = 8888;
+//.env 환경변수 사용하기
+import dotenv from "dotenv";
+dotenv.config();
+
+const PORT = process.env.PORT;
 
 const app = express();
 
