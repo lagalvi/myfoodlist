@@ -12,9 +12,22 @@ const MainList = () => {
 
   //추가 dialog 관련
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [foodList, setFoodList] = useState([]);
+
+  //마푸리에 올릴 사진
+  const [imgFiles, setImgFiles] = useState([]);
+
+  //올린 사진 미리보기
+  const [imgPreviews, setImgPreviews] = useState([]);
+  const [imgIndex, setImgIndex] = useState(0);
+
   const openDialog = () => {
     setAddForm(initAddForm);
     setIsDialogOpen(true);
+    setImgFiles([]);
+    setImgPreviews([]);
+    setImgIndex(0);
   };
   const closeDialog = () => setIsDialogOpen(false);
 
@@ -29,7 +42,12 @@ const MainList = () => {
     foodComment: useRef(),
   };
 
-  const [foodList, setFoodList] = useState([]);
+  const getMFL = async () => {
+    const data = await selectMFL(user.seq);
+    if (data !== null) {
+      setFoodList(data.result);
+    }
+  };
 
   //마푸리 목록 획득
   //개발 모드에서 두번 호출 되는 부분 방지
@@ -40,12 +58,6 @@ const MainList = () => {
     if (isRendering.current) return;
     isRendering.current = true;
 
-    const getMFL = async () => {
-      const data = await selectMFL(user.seq);
-      if (data !== null) {
-        setFoodList(data.result);
-      }
-    };
     getMFL();
   });
 
@@ -89,36 +101,39 @@ const MainList = () => {
           return;
         }
 
-        const dbData = {
-          user_seq: user.seq,
-          name: addForm.foodName,
-          address: data.roadAddress,
-          comment: addForm.foodComment,
-          lat: data.lat,
-          lon: data.lon,
-        };
+        //서버에 저장
+        const formData = new FormData();
+
+        formData.append("user_seq", user.seq);
+        formData.append("name", addForm.foodName);
+        formData.append("address", data.roadAddress);
+        formData.append("comment", addForm.foodComment);
+        formData.append("lat", data.lat);
+        formData.append("lon", data.lon);
+
+        for (let i = 0; i < imgFiles.length; i++) {
+          formData.append("images", imgFiles[i]);
+        }
 
         const insertUrl = `${SERVER_URL}/insertmfl`;
         fetch(insertUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dbData),
+          body: formData,
         })
           .then((res) => res.json())
           .then((data) => {
             if (data.code === 200) {
-              alert("추가 완료");
+              alert("마푸리 추가 성공");
               closeDialog();
-              return;
+              //정보를 다시 획득한다.
+              getMFL();
             } else {
               alert(`${data.code}\n${data.message}`);
               return;
             }
           })
           .catch((err) => {
-            alert(err);
+            alert(`에러\n${err}`);
           });
       })
       .catch((err) => {
@@ -132,6 +147,25 @@ const MainList = () => {
       ...addForm,
       [name]: value,
     });
+  };
+
+  const handleImgFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+
+    setImgFiles(selectedFiles);
+
+    const imgUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+
+    setImgPreviews(imgUrls);
+    setImgIndex(0);
+  };
+
+  const goImgPrev = () => {
+    setImgIndex((prev) => (prev === 0 ? imgPreviews.length - 1 : prev - 1));
+  };
+
+  const goImgNext = () => {
+    setImgIndex((prev) => (prev === imgPreviews.length - 1 ? 0 : prev + 1));
   };
 
   return (
@@ -211,6 +245,35 @@ const MainList = () => {
                   type="text"
                 />
               </div>
+              <div className="add-row">
+                <label className="add-label">사진</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImgFileChange}
+                />
+              </div>
+              {imgPreviews.length > 0 ? (
+                <div className="add-row add-img-row">
+                  <button type="button" onClick={goImgPrev}>
+                    ←
+                  </button>
+                  <div id="add-img-wrap">
+                    <img
+                      id="add-preview-img"
+                      src={imgPreviews[imgIndex]}
+                      alt={`preview-${imgIndex}`}
+                    />
+                  </div>
+                  <button type="button" onClick={goImgNext}>
+                    →
+                  </button>
+                </div>
+              ) : (
+                <div></div>
+              )}
+
               <div className="add-row">
                 <button onClick={closeDialog}>닫기</button>
                 <button type="submit">추가</button>
