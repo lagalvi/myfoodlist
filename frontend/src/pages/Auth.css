@@ -1,0 +1,51 @@
+/*
+로그인, 회원가입 공통 css
+*/
+
+.auth-page {
+  margin: 40px auto;
+  background-color: cadetblue;
+  padding: 20px;
+  width: fit-content;
+}
+.auth-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #2c3e50;
+  letter-spacing: 4px; /* 글자 간격 넓히기 */
+  text-transform: uppercase; /* 대문자로 변환 */
+  margin-bottom: 30px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
+  /* 텍스트 그림자 효과 */
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.auth-container {
+  margin: 10px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.auth-label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.auth-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
