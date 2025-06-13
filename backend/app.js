@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
 import { Pool } from "pg";
+import multer from "multer";
+import { fileURLToPath } from "url";
+import path, { extname } from "path";
+import fs from "fs/promises";
 
 import {
   FRONT_END_URL,
@@ -13,8 +17,8 @@ import {
 import cookieParser from "cookie-parser";
 
 //.env 환경변수 사용하기
-import dotenv from "dotenv";
-dotenv.config();
+//import dotenv from "dotenv";
+//dotenv.config();
 
 const PORT = process.env.PORT;
 
@@ -230,24 +234,73 @@ app.post("/geocoding", async (req, res) => {
     });
 });
 
-//마푸리 추가
-app.post("/insertmfl", async (req, res) => {
-  const { user_seq, name, address, comment, lat, lon } = req.body;
+//multer : 메모리에 저장(나중에 직접 파일 저장)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-  const query = `INSERT INTO mfl_food 
+//마푸리 추가
+app.post("/insertmfl", upload.array("images"), async (req, res) => {
+  const { user_seq, name, address, comment, lat, lon } = req.body;
+  const files = req.files;
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    //1. mfl_food에 insert food seq를 반환
+    const foodResult = await client.query(
+      `INSERT INTO mfl_food 
                 (user_seq, name, address, lat, lon, comment)
                 values 
-                ($1, $2, $3, $4, $5, $6)`;
-  pool
-    .query(query, [user_seq, name, address, lat, lon, comment])
-    .then((data) => {
-      console.log(data);
-      res.send(Response.SUCCESS);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.send(Response.ERROR_INSERT_MFL);
+                ($1, $2, $3, $4, $5, $6)
+                RETURNING seq`,
+      [user_seq, name, address, lat, lon, comment]
+    );
+
+    const foodSeq = foodResult.rows[0].seq;
+
+    //업로드 경로 설정
+    const uploadDir = path.join(
+      "uploads",
+      "imgs",
+      String(user_seq),
+      String(foodSeq)
+    );
+    await fs.mkdir(uploadDir, {
+      recursive: true, //디렉토리가 없으면 한번에 생성해주는 옵션
     });
+
+    //mfl_food_img에 저장
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const extName = path.extname(file.originalname); // 확장자 추출
+      const fileName = `${i + 1}${extName}`; // ex) 0.png
+
+      const foodPath = path.join(uploadDir, fileName);
+
+      //db에 저장
+      await client.query(
+        `INSERT INTO mfl_food_image(food_seq, user_seq, image_path)
+                    values
+                    ($1, $2, $3)`,
+        [foodSeq, user_seq, foodPath]
+      );
+
+      //이미지 파일 저장
+      await fs.writeFile(foodPath, file.buffer);
+    }
+
+    await client.query("COMMIT");
+    res.send(Response.SUCCESS);
+  } catch (err) {
+    //실패하면 복구
+    console.log(err);
+    await client.query("ROLLBACK");
+    res.send(Response.ERROR_INSERT_MFL);
+  } finally {
+    client.release();
+  }
 });
 
 //마푸리 가져오기

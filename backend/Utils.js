@@ -1,6 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+//.env 환경변수 사용하기
+import dotenv from "dotenv";
+dotenv.config();
+
 const SECRET_KEY = process.env.SECRET_TOKEN;
 
 export const generateToken = (payload) => {

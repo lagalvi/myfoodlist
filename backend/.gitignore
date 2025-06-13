@@ -19,3 +19,6 @@ Thumbs.db
 # IDE 설정 파일
 .vscode/
 .idea/
+
+# 업로드 파일
+uploads/
