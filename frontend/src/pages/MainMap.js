@@ -4,17 +4,32 @@
  * @returns
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { menuName } from "./Main";
 import "./MainMap.css";
 import { useOutletContext } from "react-router-dom";
-import { selectMFL } from "../Utils";
-//import { useOutletContext } from "react-router-dom";
+import { selectMFL, selectMFLImages, SERVER_URL } from "../Utils";
 
 const MainMap = () => {
+  const { selectUser } = useOutletContext();
+
+  const [selectedMFL, setSelectedMFL] = useState({});
+  const [isMFLDialog, setIsMFLDialog] = useState(false);
+
+  const [imgIndex, setImgIndex] = useState(0);
+
   //팝업을 띄운다.
   const showSelectMFL = async (item) => {
-    console.log(item);
+    setImgIndex(0);
+
+    const images = await selectMFLImages(selectUser.seq, item.seq);
+
+    setSelectedMFL({
+      ...item,
+      imageList: images.result,
+    });
+
+    setIsMFLDialog(true);
   };
 
   //네이버 맵 초기화 함수
@@ -58,14 +73,24 @@ const MainMap = () => {
     map.fitBounds(bounds);
   };
 
-  const { selectUser } = useOutletContext();
-
+  //초기화
   useEffect(() => {
     selectMFL(selectUser.seq).then((data) => {
       initNaverMap(data.result);
     });
   });
 
+  const goMFLPrev = () => {
+    setImgIndex((prev) =>
+      prev === 0 ? selectedMFL.imageList.length - 1 : prev - 1
+    );
+  };
+
+  const goMFLNext = () => {
+    setImgIndex((prev) =>
+      prev === selectedMFL.imageList.length - 1 ? 0 : prev + 1
+    );
+  };
   return (
     <div id="map-container">
       <div className="right-title">
@@ -74,6 +99,44 @@ const MainMap = () => {
 
       {/** 지도 */}
       <div id="naverMap" />
+
+      {/**마푸리 클릭 다이얼로그 */}
+      {isMFLDialog && (
+        <div
+          className="map-mfl-dialog-backdrop"
+          onClick={() => setIsMFLDialog(false)}
+        >
+          <div className="map-mfl-dialog" onClick={(e) => e.stopPropagation()}>
+            <h1>{selectedMFL.name}</h1>
+            <div className="map-mfl-dialog-row">
+              <label className="map-mfl-dialog-label">주소</label>
+              <div className="map-mfl-dialog-value">{selectedMFL.address}</div>
+            </div>
+            <div className="map-mfl-dialog-row">
+              <label className="map-mfl-dialog-label">의견</label>
+              <div className="map-mfl-dialog-value">{selectedMFL.comment}</div>
+            </div>
+            <div className="map-mfl-dialog-row map-mfl-dialog-img-row-wrap">
+              <button type="button" onClick={goMFLPrev}>
+                ←
+              </button>
+              <div className="map-mfl-dialog-img-wrap">
+                {selectedMFL.imageList.length > 0 ? (
+                  <img
+                    src={`${SERVER_URL}/${selectedMFL.imageList[imgIndex].image_path}`}
+                    alt={`${selectedMFL.name}${imgIndex}`}
+                  />
+                ) : (
+                  <div>이미지가 없습니다.</div>
+                )}
+              </div>
+              <button type="button" onClick={goMFLNext}>
+                →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
