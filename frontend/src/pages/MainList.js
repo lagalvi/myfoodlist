@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { menuName } from "./Main";
 import "./MainList.css";
-import { LOCAL_STORAGE_DATA, selectMFL, SERVER_URL } from "../Utils";
+import {
+  LOCAL_STORAGE_DATA,
+  selectMFL,
+  selectMFLImages,
+  SERVER_URL,
+} from "../Utils";
 
 /**
  * 마푸리 목록을 보여주는 컴포넌트
@@ -175,33 +180,16 @@ const MainList = () => {
     setImgIndex((prev) => (prev === imgPreviews.length - 1 ? 0 : prev + 1));
   };
 
-  const clickMyFood = (food) => {
-    const param = {
-      userSeq: user.seq,
-      foodSeq: food.seq,
-    };
+  const clickMyFood = async (food) => {
+    const data = await selectMFLImages(user.seq, food.seq);
 
-    const url = `${SERVER_URL}/selectmflimages`;
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(param),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.code === 200) {
-          if (data.result.length > 0) {
-            showMFLImages(data.result, food.name);
-          } else {
-            alert("해당 음식점의 사진이 없습니다.");
-          }
-        }
-      })
-      .catch((err) => {
-        alert(`에러\n${err}`);
-      });
+    if (data.code === 200) {
+      if (data.result.length > 0) {
+        showMFLImages(data.result, food.name);
+      } else {
+        alert("해당 음식점의 사진이 없습니다.");
+      }
+    }
   };
 
   const showMFLImages = (images, foodName) => {
