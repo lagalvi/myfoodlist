@@ -16,9 +16,8 @@ import {
 } from "./Utils.js";
 import cookieParser from "cookie-parser";
 
-//.env 환경변수 사용하기
-//import dotenv from "dotenv";
-//dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT;
 
@@ -36,6 +35,9 @@ app.use(
 );
 
 app.use(cookieParser());
+
+//이미지 디렉토리 접근 허용
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 //postgre 설정
 const pool = new Pool({
@@ -356,6 +358,30 @@ app.post("/selectuserlist", async (req, res) => {
     .catch((err) => {
       console.log(err);
       res.send(Response.ERROR_SELECT_USER_LIST);
+    });
+});
+
+//userseq와 foodseq에 해당하는 이미지들 가져오기
+app.post("/selectmflimages", async (req, res) => {
+  const { userSeq, foodSeq } = req.body;
+
+  const query = `SELECT seq, image_path
+                FROM mfl_food_image
+                WHERE user_seq=$1
+                AND food_seq=$2`;
+
+  pool
+    .query(query, [userSeq, foodSeq])
+    .then((data) => {
+      const result = {
+        ...Response.SUCCESS,
+        result: data.rows,
+      };
+      res.send(result);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send(Response.ERROR_SELECT_IMAGES);
     });
 });
 

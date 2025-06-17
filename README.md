@@ -31,7 +31,7 @@ PostgreSQL 17.4 on x86_64-windows, compiled by msvc-19.42.34436, 64-bit
     address VARCHAR(255) NOT NULL, -- 음식점 주소
     lat DECIMAL(9,6) NOT NULL, -- 위도 (소수점 6자리까지)
     lon DECIMAL(9,6) NOT NULL, -- 경도 (소수점 6자리까지)
-        -- 사용자 테이블과 외래 키 연결
+    -- 사용자 테이블과 외래 키 연결
     CONSTRAINT fk_food_user
         FOREIGN KEY (user_seq)
         REFERENCES mfl_users(seq)

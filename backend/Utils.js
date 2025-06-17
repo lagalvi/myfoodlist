@@ -61,7 +61,11 @@ export const Response = {
   },
   ERROR_SELECT_USER_LIST: {
     code: 409,
-    message: "사용자 가져오기 실패했습니다",
+    message: "사용자 가져오기 실패했습니다.",
+  },
+  ERROR_SELECT_IMAGES: {
+    code: 410,
+    message: "이미지 가져오기 실패했습니다.",
   },
 };
 

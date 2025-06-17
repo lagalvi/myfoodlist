@@ -11,7 +11,7 @@ const MainList = () => {
   const user = JSON.parse(localStorage.getItem(LOCAL_STORAGE_DATA));
 
   //추가 dialog 관련
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const [foodList, setFoodList] = useState([]);
 
@@ -22,14 +22,21 @@ const MainList = () => {
   const [imgPreviews, setImgPreviews] = useState([]);
   const [imgIndex, setImgIndex] = useState(0);
 
-  const openDialog = () => {
+  const [isMFLImageDialog, setIsMFLImageDialog] = useState(false);
+
+  const [mflImgLinks, setMflImgLinks] = useState([]);
+  const [mflImgIndex, setMflImgIndex] = useState(0);
+
+  const closeMFLImageDialog = () => setIsMFLImageDialog(false);
+
+  const openAddDialog = () => {
     setAddForm(initAddForm);
-    setIsDialogOpen(true);
+    setIsAddDialogOpen(true);
     setImgFiles([]);
     setImgPreviews([]);
     setImgIndex(0);
   };
-  const closeDialog = () => setIsDialogOpen(false);
+  const closeAddDialog = () => setIsAddDialogOpen(false);
 
   const initAddForm = {
     foodName: "",
@@ -124,7 +131,7 @@ const MainList = () => {
           .then((data) => {
             if (data.code === 200) {
               alert("마푸리 추가 성공");
-              closeDialog();
+              closeAddDialog();
               //정보를 다시 획득한다.
               getMFL();
             } else {
@@ -168,11 +175,62 @@ const MainList = () => {
     setImgIndex((prev) => (prev === imgPreviews.length - 1 ? 0 : prev + 1));
   };
 
+  const clickMyFood = (food) => {
+    const param = {
+      userSeq: user.seq,
+      foodSeq: food.seq,
+    };
+
+    const url = `${SERVER_URL}/selectmflimages`;
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(param),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.code === 200) {
+          if (data.result.length > 0) {
+            showMFLImages(data.result, food.name);
+          } else {
+            alert("해당 음식점의 사진이 없습니다.");
+          }
+        }
+      })
+      .catch((err) => {
+        alert(`에러\n${err}`);
+      });
+  };
+
+  const showMFLImages = (images, foodName) => {
+    console.log(images, foodName);
+    setIsMFLImageDialog(true);
+    setMflImgIndex(0);
+
+    const mflImages = [];
+    images.map((image, index) => {
+      mflImages.push({
+        src: `${SERVER_URL}/${image.image_path}`,
+        alt: `${foodName}${image.seq}`,
+      });
+    });
+    setMflImgLinks(mflImages);
+  };
+
+  const goMFLPrev = () => {
+    setMflImgIndex((prev) => (prev === 0 ? mflImgLinks.length - 1 : prev - 1));
+  };
+  const goMFLNext = () => {
+    setMflImgIndex((prev) => (prev === mflImgLinks.length - 1 ? 0 : prev + 1));
+  };
+
   return (
     <div id="list-container">
       <div id="list-header">
         <div className="right-title">{menuName.list}</div>
-        <button id="add-button" onClick={openDialog}>
+        <button id="add-button" onClick={openAddDialog}>
           마푸리 추가
         </button>
       </div>
@@ -187,7 +245,7 @@ const MainList = () => {
         <tbody>
           {foodList.length > 0 ? (
             foodList.map((food, index) => (
-              <tr key={index}>
+              <tr key={index} onClick={() => clickMyFood(food)}>
                 <td>{food.name}</td>
                 <td>{food.address}</td>
                 <td>{food.comment}</td>
@@ -203,8 +261,31 @@ const MainList = () => {
         </tbody>
       </table>
 
+      {/** 사진 보여주는 다이얼로그 모달리스 형식*/}
+      {isMFLImageDialog && (
+        <div className="dialog-backdrop" onClick={closeMFLImageDialog}>
+          <div
+            className="dialog-box img-dialog"
+            onClick={(e) => e.stopPropagation()} // 안에서 클릭해도 다이얼로그 닫히지 않게
+          >
+            <button type="button" onClick={goMFLPrev}>
+              ←
+            </button>
+            <div className="img-dialog-img-wrap">
+              <img
+                src={mflImgLinks[mflImgIndex].src}
+                alt={`${mflImgLinks[mflImgIndex].alt}`}
+              />
+            </div>
+            <button type="button" onClick={goMFLNext}>
+              →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/**모달형식으로 마푸리 추가 다이얼로그를 띄운다. */}
-      {isDialogOpen && (
+      {isAddDialogOpen && (
         <div className="dialog-backdrop">
           <div className="dialog-box">
             <h3>마푸리 추가</h3>
@@ -275,7 +356,7 @@ const MainList = () => {
               )}
 
               <div className="add-row">
-                <button onClick={closeDialog}>닫기</button>
+                <button onClick={closeAddDialog}>닫기</button>
                 <button type="submit">추가</button>
               </div>
             </form>
