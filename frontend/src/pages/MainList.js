@@ -222,32 +222,38 @@ const MainList = () => {
           마푸리 추가
         </button>
       </div>
-      <table border={1} className="food-table">
-        <thead>
-          <tr>
-            <th>음식점 이름</th>
-            <th>주소</th>
-            <th>의견</th>
-          </tr>
-        </thead>
-        <tbody>
-          {foodList.length > 0 ? (
-            foodList.map((food, index) => (
-              <tr key={index} onClick={() => clickMyFood(food)}>
-                <td>{food.name}</td>
-                <td>{food.address}</td>
-                <td>{food.comment}</td>
-              </tr>
-            ))
-          ) : (
+      <div className="food-table-header-wrapper">
+        <table border={1} className="food-table">
+          <thead>
             <tr>
-              <td colSpan={3} style={{ textAlign: "center" }}>
-                등록된 음식점이 없습니다.
-              </td>
+              <th>음식점 이름</th>
+              <th>주소</th>
+              <th>의견</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+        </table>
+      </div>
+      <div className="food-table-body-wrapper">
+        <table className="food-table">
+          <tbody>
+            {foodList.length > 0 ? (
+              foodList.map((food, index) => (
+                <tr key={index} onClick={() => clickMyFood(food)}>
+                  <td>{food.name}</td>
+                  <td>{food.address}</td>
+                  <td>{food.comment}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center" }}>
+                  등록된 음식점이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/** 사진 보여주는 다이얼로그 모달리스 형식*/}
       {isMFLImageDialog && (
