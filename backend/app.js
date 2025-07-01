@@ -41,11 +41,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 //postgre 설정
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "oaie",
-  password: "7410",
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PW,
+  port: process.env.DB_PORT,
 });
 
 app.get("/", async (req, res) => {
